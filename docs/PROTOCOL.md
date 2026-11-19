@@ -49,10 +49,13 @@ A 48-bit state.
 | 8–15 | B0–B7 | the same |
 | 16–23 | C0–C7 | the same |
 | 24–27 | D0–D3 | the same |
+| 28–31 | Security cartridge slot D4–D7 | the pin is at 5 V |
 | 32–39 | EXT-OUT OUT0–OUT7 | the pin is at 5 V |
 | 40, 41 | Coin counters 1, 2 | the coil is energised |
 
 All other bits are ignored.
+
+The cartridge slot's lines are there for what cartridges carry besides their security chip: Step Champ's lamp drivers (a shift register clocked on D5, with D6 and D7), the amplifier control of DrumMania's and other BEMANI cartridges. D0–D3 are not carried at all: they are the cartridge's security chip, and a host that replayed a game's writes to it could overwrite a real cartridge. The slot has 5 V only while a host talks to the raw interface, so a cartridge's lamps go dark with the host.
 
 Three things turn outputs off without the host:
 - **Power-on and reset:** everything is off until a host says otherwise (the output drivers are disabled in hardware until the firmware has cleared them).
@@ -103,7 +106,7 @@ A report that doesn't start with `0x53`, or with a command not listed, is ignore
 
 **An output entry** is a u16 delay and the 48-bit state. The state goes onto the pins `delay` × 10 µs after the entry before it did, and never sooner than it arrives. With a delay of 0, every entry still reaches the pins, one after the other. The board never merges entries.
 
-This is what a Dance Dance Revolution cabinet needs: the game talks to each stage's board by toggling two light outputs (data and clock), and the edges must arrive one by one, in order, not faster than that board follows. A host sends lamps with a delay of 0 and the stage's edges with a delay.
+This is what serial lines need. A Dance Dance Revolution game talks to each stage's board by toggling two light outputs (data and clock), at its own slow pace; Step Champ clocks its lamps into the cartridge's shift register. The edges must arrive one by one, in order, not faster than what listens follows. A host sends lamps with a delay of 0 and a stage's edges with the game's own gaps.
 
 **Flow control.** The queue holds 128 entries; more are dropped (status bit 1). A host counts what it has sent against bytes 12–13 and keeps the difference under the queue's size.
 
@@ -124,7 +127,7 @@ This is what a Dance Dance Revolution cabinet needs: the game talks to each stag
 
 **Input, 8 bytes:** buttons 1–26 are switch bits 0–25 (button 9 is player 1 left, 16 is player 1 start, 26 is Test), then 6 bits of padding and four 8-bit axes, X, Y, Z and Rx, for ANALOG CH0–CH3. The joystick directions are buttons, not a hat: on a 573 cabinet those pins are drum pads, guitar picks and floor sensors as often as a joystick.
 
-**Output, 5 bytes:** 38 one-bit lamps (LED page, Generic Indicator) in the order A0–A7, B0–B7, C0–C7, D0–D3, OUT0–OUT7, coin counter 1, coin counter 2. It can be written through the control endpoint (SET_REPORT).
+**Output, 5 bytes:** 38 one-bit lamps (LED page, Generic Indicator) in the order A0–A7, B0–B7, C0–C7, D0–D3, OUT0–OUT7, coin counter 1, coin counter 2. It can be written through the control endpoint (SET_REPORT). The cartridge slot's lines are not among them.
 
 What the gamepad interface lit stays lit until it is written again: programs that drive HID lamps write only when a lamp changes. While a host talks to the raw interface the gamepad's outputs are ignored.
 

@@ -18,12 +18,13 @@
 
 static u573_t g_state;
 static uint64_t g_drive;   /* what the 595s hold */
+static bool g_cart_power;  /* ... and whether the cartridge slot has its 5 V */
 static bool g_mounted;
 
 /* One pass over the chains: the switches as they are now come back, `outputs` goes onto the pins */
 static uint32_t scan(uint64_t outputs) {
     uint8_t tx[CHAIN_BYTES], rx[CHAIN_BYTES];
-    chain_from_outputs(outputs, tx);
+    chain_from_outputs(outputs, g_cart_power, tx);
     gpio_put(PIN_IN_LOAD, 0);
     busy_wait_us_32(1);
     gpio_put(PIN_IN_LOAD, 1);
@@ -151,6 +152,8 @@ int main(void) {
         usb_task(now);
         /* each output state the host queued goes to the pins in turn, when it is due */
         bool changed = u573_task(&g_state, now, &g_drive);
+        const bool power = u573_host_active(&g_state, now);
+        if (power != g_cart_power) g_cart_power = power, changed = true;
         if (changed || now >= next_scan) {
             u573_sample(&g_state, now, scan(g_drive));
             next_scan = now + SCAN_PERIOD_US;

@@ -179,7 +179,20 @@ static void test_outputs(void) {
     /* bits that are no output are never driven */
     const uint64_t all = UINT64_MAX;
     u573_raw_out(&t, 20, r, outputs_report(r, 1, d0, &all, 0));
-    CHECK(u573_task(&t, 20, &td) && td == U573_OUT_ALL);
+    CHECK(u573_task(&t, 20, &td) && td == U573_OUT_ALL && U573_OUT_ALL == UINT64_C(0x03ffffffffff));
+    /* the cartridge slot's lines: D4-D7 on bits 28-31, a serial word's edges each in its turn */
+    CHECK(U573_OUT_CART(4) == UINT64_C(1) << 28 && U573_OUT_CART(7) == UINT64_C(1) << 31);
+    const uint64_t word[4] = {U573_OUT_CART(7), U573_OUT_CART(7) | U573_OUT_CART(5), U573_OUT_CART(7), 0};
+    const uint16_t dw[4] = {0, 0, 0, 0};
+    u573_raw_out(&t, 30, r, outputs_report(r, 4, dw, word, 0));
+    for (int k = 0; k < 4; k++) CHECK(u573_task(&t, 30, &td) && td == word[k]);
+    /* ... and no lamp of the gamepad's reaches them */
+    u573_t pad;
+    uint64_t pd = 0;
+    u573_init(&pad, 0);
+    const uint8_t every[U573_PAD_OUT_SIZE] = {0xff, 0xff, 0xff, 0xff, 0xff};
+    u573_pad_out(&pad, 10, every, sizeof every);
+    CHECK(u573_task(&pad, 10, &pd) && pd == (U573_OUT_ALL & ~U573_OUT_CART_ALL));
 }
 
 static void test_failsafe(void) {

@@ -53,7 +53,7 @@ sudo udevadm control --reload && sudo udevadm trigger --subsystem-match=hidraw
 | `tools/u573.py info` | The firmware's version, the queue's size, the settings |
 | `tools/u573.py watch` | Prints the switches by name as they change, and the analog channels |
 | `tools/u573.py set A0 C2 OUT7` | Those outputs on, the others off, until Ctrl-C |
-| `tools/u573.py chase` | Each output on for half a second in turn: A0 to D3, OUT0 to OUT7 (not the coin counters) |
+| `tools/u573.py chase` | Each output on for half a second in turn: A0 to D3, OUT0 to OUT7 (not the coin counters, nor the cartridge slot's `CART4`–`CART7`) |
 | `tools/u573.py bootloader` | Restarts the board as its USB bootloader |
 
 A Pico alone, with nothing on its pins, already answers `info`, and `watch` shows every switch closed or open at random (its inputs float). On the bench, the first things to see are a switch to ground on a 74HCT165 input showing up in `watch`, and `chase` walking an LED along the 74HCT595 outputs.

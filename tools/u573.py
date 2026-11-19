@@ -28,7 +28,9 @@ for _bank, _first, _count in (("A", 0, 8), ("B", 8, 8), ("C", 16, 8), ("D", 24, 
     for _n in range(_count):
         OUTPUTS[f"{_bank}{_n}"] = _first + _n
 OUTPUTS["COUNTER1"], OUTPUTS["COUNTER2"] = 40, 41
-CHASE = [n for n in OUTPUTS if not n.startswith("COUNTER")]
+for _n in range(4, 8):
+    OUTPUTS[f"CART{_n}"] = 28 + _n - 4   # the security cartridge slot's D4-D7
+CHASE = [n for n in OUTPUTS if not n.startswith(("COUNTER", "CART"))]
 
 
 def command(cmd, data=b"", count=0, flags=0):
@@ -46,7 +48,7 @@ def state_of(names):
     state = 0
     for n in names:
         if n.upper() not in OUTPUTS:
-            sys.exit(f"{n}: not an output (A0-A7, B0-B7, C0-C7, D0-D3, OUT0-OUT7, COUNTER1, COUNTER2)")
+            sys.exit(f"{n}: not an output (A0-A7, B0-B7, C0-C7, D0-D3, OUT0-OUT7, COUNTER1, COUNTER2, CART4-CART7)")
         state |= 1 << OUTPUTS[n.upper()]
     return state
 
@@ -171,7 +173,8 @@ def selftest():
     assert r[8:16] == bytes([0, 0, 0x01, 0, 0, 0x08, 0, 0])
     assert r[16:24] == bytes([51, 0, 0, 0, 0, 0, 0x80, 0x01]) and not any(r[24:])
     assert command(CMD_BOOTLOADER, b"BOOT")[:12] == bytes([0x53, 0x7E, 0, 0, 0, 0, 0, 0]) + b"BOOT"
-    assert len(OUTPUTS) == 38 and len(CHASE) == 36 and len(SWITCHES) == 30
+    assert len(OUTPUTS) == 42 and len(CHASE) == 36 and len(SWITCHES) == 30
+    assert state_of(["cart4", "CART7"]) == 0x90000000
     i = parse_in(bytes([0x73, 1, 1, 9]) + struct.pack("<I", 1 << 25 | 1 << 8) + bytes([1, 2, 3, 4, 0x34, 0x12, 5, 128]) + bytes(48))
     assert i["switches"] == 1 << 25 | 1 << 8 and i["applied"] == 0x1234 and i["queued"] == 5 and i["capacity"] == 128
     assert switch_names(i["switches"]) == ["P1 left", "Test"] and i["analog"] == [1, 2, 3, 4]

@@ -12,7 +12,7 @@ Nothing here has been checked on a cabinet yet.
 
 ## Dance Dance Revolution (two players)
 
-Each stage has a board (GN845-PWB(B)) between its sensors and the JAMMA harness. It gives the four panels only after the game has spoken to it over that stage's data and clock outputs; before that it holds right and up. HIRAKU relays the game's dialogue (its `docs/USB573.md`). The gamepad interface cannot: with other programs, the stages stay locked unless a System 573 game has run since the cabinet was turned on.
+Each stage has a board (GN845-PWB(B)) between its sensors and the JAMMA harness. It gives the four panels only after the game has been through a dialogue with it over that stage's data and clock outputs; before that it holds right and up. The 573 is slow about it (some 200 ms a message) and goes on clocking that bus while the game is played. HIRAKU relays the game's edges at the game's pace (its `docs/USB573.md`). The gamepad interface cannot: with other programs, the stages stay locked unless a System 573 game has run since the cabinet was turned on.
 
 | Input | Pin | Input | Pin |
 |---|---|---|---|
@@ -64,7 +64,7 @@ No stage board: each panel's two sensors are on JAMMA pins of their own.
 
 ## DrumMania
 
-The pads' interface in the cabinet gives a switch closure per hit.
+The pads' interface in the cabinet gives a switch closure per hit. The lights go through the cabinet's relay board. DrumMania's security cartridge (GX896-PWB(A)A) also has a 6-pin control port for the amplifier: if the cabinet has a lead on it, the cartridge goes into the board's cartridge slot ([HARDWARE.md](HARDWARE.md#j9-security-cartridge-slot-the-573s-cn14)).
 
 | Input | Pin | Input | Pin |
 |---|---|---|---|
@@ -88,6 +88,28 @@ The pads' interface in the cabinet gives a switch closure per hit.
 | Bottom neon | D3 | B1 |
 
 On the later cabinets the neons and the Start and Select lamps are lit while their output does *not* sink (MAME's `drmn_output_callback`).
+
+## Step Champ
+
+A plain System 573: no I/O board, no CD-ROM drive, the game in the 573's flash. Three players, each with three controls and a Start. MAME names the controls red, green and blue, after Hyper Bishi Bashi Champ's buttons whose input ports it shares.
+
+| Input | Player 1 | Player 2 | Player 3 |
+|---|---|---|---|
+| Red | JAMMA 22 (P1 button 1) | Z (P2 button 1) | 20 (P1 left) |
+| Green | 23 (P1 button 2) | a (P2 button 2) | 19 (P1 down) |
+| Blue | 24 (P1 button 3) | b (P2 button 3) | 21 (P1 right) |
+| Start | 17 | U | 18 (P1 up) |
+
+Coin 16, Test 15, Service R.
+
+The lamps are not on the 573 at all. The security cartridge carries two shift registers and lamp drivers, and the game clocks a word of eight bits into them over the cartridge slot's D5 (clock), D6 (reset) and D7 (data); the cabinet's lamp plug and a 12 V lead are on the cartridge. Put the cartridge in the board's cartridge slot and it goes on doing that.
+
+| Bit of the word (the first clocked in is 7) | Lamp (MAME's names) | On bank A, decoded by HIRAKU |
+|---|---|---|
+| 7, 6, 5 | Start lamps of players 1, 2, 3 | A7, A6, A5 |
+| 3, 2, 1 | Halogens 1, 2, 3 | A3, A2, A1 |
+
+HIRAKU has Step Champ from MAME's description of it and has not run it; MAME itself has no sound for it.
 
 ## GuitarFreaks
 

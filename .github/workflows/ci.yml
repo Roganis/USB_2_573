@@ -1,0 +1,39 @@
+# The firmware's logic on a PC, and the firmware itself built for a Raspberry Pi Pico
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: The core's tests
+        run: |
+          cmake -S firmware/tests -B build/tests
+          cmake --build build/tests
+          ctest --test-dir build/tests --output-on-failure
+      - name: The tool's own check
+        run: python3 tools/u573.py selftest
+
+  firmware:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
+      - name: Pico SDK
+        run: |
+          git clone --depth 1 -b 2.2.0 https://github.com/raspberrypi/pico-sdk "$RUNNER_TEMP/pico-sdk"
+          git -C "$RUNNER_TEMP/pico-sdk" submodule update --init --depth 1 lib/tinyusb
+      - name: Build
+        run: |
+          cmake -S firmware/rp2040 -B build/rp2040 -DPICO_SDK_PATH="$RUNNER_TEMP/pico-sdk"
+          cmake --build build/rp2040
+      - uses: actions/upload-artifact@v4
+        with:
+          name: usb_2_573-firmware
+          path: build/rp2040/usb_2_573.uf2
